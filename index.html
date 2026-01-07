@@ -1048,8 +1048,13 @@
         .quake {
             position: absolute;
             transform: translate(-50%, -50%);
-            pointer-events: none;
+            pointer-events: auto;
             z-index: 17;
+            cursor: pointer;
+        }
+
+        .quake:hover .quake-icon {
+            filter: brightness(1.3);
         }
 
         .quake-icon {
@@ -1085,6 +1090,115 @@
             font-size: 0.45rem;
             color: #ff6600;
             white-space: nowrap;
+        }
+
+        /* Earthquake Popup */
+        .quake-popup {
+            display: none;
+            position: absolute;
+            z-index: 100;
+            background: rgba(15, 5, 5, 0.95);
+            border: 1px solid #ff4400;
+            min-width: 240px;
+            max-width: 300px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 68, 0, 0.2);
+            pointer-events: auto;
+        }
+
+        .quake-popup.visible {
+            display: block;
+        }
+
+        .quake-popup.major {
+            border-color: #ff0000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 0, 0, 0.3);
+        }
+
+        .quake-popup-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #401010;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .quake-popup-mag {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff6600;
+        }
+
+        .quake-popup.major .quake-popup-mag {
+            color: #ff0000;
+        }
+
+        .quake-popup-severity {
+            font-size: 0.55rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 2px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .quake-popup-severity.minor { background: #ff6600; color: #000; }
+        .quake-popup-severity.moderate { background: #ff4400; color: #fff; }
+        .quake-popup-severity.major { background: #ff0000; color: #fff; animation: pulse-level 1s infinite; }
+
+        .quake-popup-location {
+            padding: 0.6rem 1rem;
+            font-size: 0.7rem;
+            color: #e8e8e8;
+            border-bottom: 1px solid #401010;
+        }
+
+        .quake-popup-info {
+            padding: 0.6rem 1rem;
+        }
+
+        .quake-popup-stat {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.6rem;
+            padding: 0.25rem 0;
+        }
+
+        .quake-popup-stat-label {
+            color: #804030;
+        }
+
+        .quake-popup-stat-value {
+            color: #e8e8e8;
+        }
+
+        .quake-popup-close {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: none;
+            border: none;
+            color: #804030;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            line-height: 1;
+        }
+
+        .quake-popup-close:hover {
+            color: #ff6600;
+        }
+
+        .quake-popup-link {
+            display: block;
+            padding: 0.5rem 1rem;
+            font-size: 0.55rem;
+            color: #ff6600;
+            text-decoration: none;
+            border-top: 1px solid #401010;
+            text-align: center;
+        }
+
+        .quake-popup-link:hover {
+            background: rgba(255, 102, 0, 0.1);
         }
 
         /* Cyber threat indicators */
@@ -2789,11 +2903,27 @@
             });
 
             // Earthquake markers
-            earthquakes.slice(0, 10).forEach(eq => {
+            earthquakes.slice(0, 10).forEach((eq, index) => {
                 const pos = toPercent(eq.lon, eq.lat);
                 const isMajor = eq.mag >= 6.0;
+
+                // Store earthquake data
+                const eqData = encodeURIComponent(JSON.stringify({
+                    mag: eq.mag,
+                    place: eq.place,
+                    time: eq.time,
+                    lat: eq.lat,
+                    lon: eq.lon,
+                    depth: eq.depth,
+                    id: eq.id || `eq_${index}`
+                }));
+
                 overlaysHTML += `
-                    <div class="quake ${isMajor ? 'major' : ''}" style="left: ${pos.x}%; top: ${pos.y}%;">
+                    <div class="quake ${isMajor ? 'major' : ''}"
+                         style="left: ${pos.x}%; top: ${pos.y}%;"
+                         data-quake-id="eq_${index}"
+                         data-quake-info="${eqData}"
+                         onclick="showQuakePopup(event, 'eq_${index}')">
                         <div class="quake-icon"></div>
                         <div class="quake-label">M${eq.mag.toFixed(1)}</div>
                     </div>
@@ -2830,6 +2960,7 @@
             // Add popup containers
             overlaysHTML += `<div class="hotspot-popup" id="hotspotPopup"></div>`;
             overlaysHTML += `<div class="chokepoint-popup" id="chokepointPopup"></div>`;
+            overlaysHTML += `<div class="quake-popup" id="quakePopup"></div>`;
 
             document.getElementById('mapOverlays').innerHTML = overlaysHTML;
 
@@ -2841,6 +2972,9 @@
                 if (!e.target.closest('.chokepoint') && !e.target.closest('.chokepoint-popup')) {
                     hideChokepointPopup();
                 }
+                if (!e.target.closest('.quake') && !e.target.closest('.quake-popup')) {
+                    hideQuakePopup();
+                }
             });
         }
 
@@ -2851,8 +2985,9 @@
             const hotspotEl = document.querySelector(`[data-hotspot-id="${hotspotId}"]`);
             if (!hotspotEl) return;
 
-            // Hide chokepoint popup if open
+            // Hide other popups
             hideChokepointPopup();
+            hideQuakePopup();
 
             const activityData = JSON.parse(decodeURIComponent(hotspotEl.dataset.hotspotActivity));
             const popup = document.getElementById('hotspotPopup');
@@ -2936,8 +3071,9 @@
             const cpEl = document.querySelector(`[data-chokepoint-id="${chokepointId}"]`);
             if (!cpEl) return;
 
-            // Hide hotspot popup if open
+            // Hide other popups
             hideHotspotPopup();
+            hideQuakePopup();
 
             const cpData = JSON.parse(decodeURIComponent(cpEl.dataset.chokepointInfo));
             const popup = document.getElementById('chokepointPopup');
@@ -3012,6 +3148,114 @@
             if (popup) {
                 popup.classList.remove('visible');
             }
+        }
+
+        // Show earthquake popup
+        function showQuakePopup(event, quakeId) {
+            event.stopPropagation();
+
+            const quakeEl = document.querySelector(`[data-quake-id="${quakeId}"]`);
+            if (!quakeEl) return;
+
+            // Hide other popups
+            hideHotspotPopup();
+            hideChokepointPopup();
+
+            const eqData = JSON.parse(decodeURIComponent(quakeEl.dataset.quakeInfo));
+            const popup = document.getElementById('quakePopup');
+
+            const isMajor = eqData.mag >= 6.0;
+            const isModerate = eqData.mag >= 5.0;
+
+            // Determine severity label
+            let severity = 'minor';
+            let severityLabel = 'Minor';
+            if (isMajor) {
+                severity = 'major';
+                severityLabel = 'Major';
+            } else if (isModerate) {
+                severity = 'moderate';
+                severityLabel = 'Moderate';
+            }
+
+            // Format time
+            const time = new Date(eqData.time);
+            const timeStr = time.toLocaleString();
+            const timeAgo = getTimeAgo(time);
+
+            // USGS link
+            const usgsLink = `https://earthquake.usgs.gov/earthquakes/eventpage/${eqData.id || ''}`;
+
+            popup.innerHTML = `
+                <button class="quake-popup-close" onclick="hideQuakePopup()">&times;</button>
+                <div class="quake-popup-header">
+                    <span class="quake-popup-mag">M${eqData.mag.toFixed(1)}</span>
+                    <span class="quake-popup-severity ${severity}">${severityLabel}</span>
+                </div>
+                <div class="quake-popup-location">${escapeHtml(eqData.place)}</div>
+                <div class="quake-popup-info">
+                    <div class="quake-popup-stat">
+                        <span class="quake-popup-stat-label">Depth</span>
+                        <span class="quake-popup-stat-value">${eqData.depth.toFixed(1)} km</span>
+                    </div>
+                    <div class="quake-popup-stat">
+                        <span class="quake-popup-stat-label">Coordinates</span>
+                        <span class="quake-popup-stat-value">${eqData.lat.toFixed(2)}°, ${eqData.lon.toFixed(2)}°</span>
+                    </div>
+                    <div class="quake-popup-stat">
+                        <span class="quake-popup-stat-label">Time</span>
+                        <span class="quake-popup-stat-value">${timeAgo}</span>
+                    </div>
+                </div>
+                <a href="${usgsLink}" target="_blank" class="quake-popup-link">View on USGS →</a>
+            `;
+
+            // Set popup class
+            popup.className = `quake-popup visible ${isMajor ? 'major' : ''}`;
+
+            // Position popup
+            const quakeRect = quakeEl.getBoundingClientRect();
+            const mapContainer = document.getElementById('worldMapContainer');
+            const mapRect = mapContainer.getBoundingClientRect();
+
+            let left = quakeRect.left - mapRect.left + 20;
+            let top = quakeRect.top - mapRect.top - 10;
+
+            const popupWidth = 260;
+            const popupHeight = 220;
+
+            if (left + popupWidth > mapRect.width) {
+                left = quakeRect.left - mapRect.left - popupWidth - 20;
+            }
+            if (top + popupHeight > mapRect.height) {
+                top = mapRect.height - popupHeight - 10;
+            }
+            if (top < 10) top = 10;
+            if (left < 10) left = 10;
+
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+        }
+
+        // Hide earthquake popup
+        function hideQuakePopup() {
+            const popup = document.getElementById('quakePopup');
+            if (popup) {
+                popup.classList.remove('visible');
+            }
+        }
+
+        // Get time ago string
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            return `${days}d ago`;
         }
 
         // Fetch Congressional trades - uses news RSS since APIs are locked down
