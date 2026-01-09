@@ -30,11 +30,6 @@
                 <div id="panelToggles"></div>
             </div>
             <div class="settings-section">
-                <div class="settings-section-title">Livestream URL</div>
-                <input type="text" id="livestreamUrl" class="settings-input" placeholder="YouTube URL (e.g. https://youtube.com/watch?v=...)" onchange="saveLivestreamUrl()">
-                <div class="settings-hint">Paste any YouTube video or livestream URL</div>
-            </div>
-            <div class="settings-section">
                 <div class="settings-section-title">Layout</div>
                 <div class="settings-hint" style="margin-bottom: 0.5rem;">Drag panel headers to reorder</div>
                 <button class="settings-reset" onclick="resetPanelOrder()">Reset Layout</button>
@@ -95,17 +90,6 @@
             </div>
             <div class="panel-content" id="mapPanel" style="max-height: none; height: 550px; overflow: hidden;">
                 <div class="loading-msg">Loading map...</div>
-            </div>
-        </section>
-
-        <!-- TBPN Livestream -->
-        <section class="panel panel-livestream" data-panel="tbpn">
-            <div class="panel-header">
-                <span class="panel-title">Livestream</span>
-                <span class="live-indicator">LIVE</span>
-            </div>
-            <div class="panel-content livestream-container" id="tbpnPanel">
-                <div class="loading-msg">Loading stream...</div>
             </div>
         </section>
 
@@ -191,17 +175,6 @@
                 <span class="panel-count" id="polymarketCount">-</span>
             </div>
             <div class="panel-content" id="polymarketPanel">
-                <div class="loading-msg">Loading...</div>
-            </div>
-        </section>
-
-        <!-- Congressional Trading -->
-        <section class="panel" data-panel="congress">
-            <div class="panel-header">
-                <span class="panel-title">Congress Trades</span>
-                <span class="panel-count" id="congressCount">-</span>
-            </div>
-            <div class="panel-content" id="congressPanel">
                 <div class="loading-msg">Loading...</div>
             </div>
         </section>

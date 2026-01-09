@@ -5,7 +5,7 @@ import { FEEDS } from './constants.js';
 import { setStatus } from './utils.js';
 import {
     fetchCategory, fetchMarkets, fetchSectors, fetchCommodities,
-    fetchEarthquakes, fetchCongressTrades, fetchWhaleTransactions,
+    fetchEarthquakes, fetchWhaleTransactions,
     fetchGovContracts, fetchAINews, fetchFedBalance, fetchPolymarket,
     fetchLayoffs, fetchSituationNews, fetchIntelFeed
 } from './data.js';
@@ -19,11 +19,11 @@ import {
 } from './layers.js';
 import {
     isPanelEnabled, togglePanel, toggleSettings, applyPanelSettings,
-    initPanels, saveLivestreamUrl, resetPanelOrder
+    initPanels, resetPanelOrder
 } from './panels.js';
 import {
     renderNews, renderMarkets, renderHeatmap, renderCommodities,
-    renderPolymarket, renderCongressTrades, renderWhaleWatch,
+    renderPolymarket, renderWhaleWatch,
     renderMainCharacter, renderGovContracts, renderAINews,
     renderMoneyPrinter, renderIntelFeed, renderLayoffs, renderSituation
 } from './renderers.js';
@@ -46,7 +46,6 @@ import {
 // Expose functions to window for onclick handlers
 window.togglePanel = (id) => togglePanel(id, refreshAll);
 window.toggleSettings = () => toggleSettings(renderMonitorsList);
-window.saveLivestreamUrl = saveLivestreamUrl;
 window.resetPanelOrder = resetPanelOrder;
 window.setMapView = (mode) => setMapView(mode, refreshAll);
 window.mapZoomIn = mapZoomIn;
@@ -185,10 +184,9 @@ async function refreshAll() {
     setStatus('Loading extras...', true);
 
     // STAGE 3: Extra data - lowest priority
-    let congressTrades = [], whales = [], contracts = [], aiNews = [], layoffs = [], venezuelaNews = [], greenlandNews = [], intelFeed = [];
+    let whales = [], contracts = [], aiNews = [], layoffs = [], venezuelaNews = [], greenlandNews = [], intelFeed = [];
     try {
         const stage3Promise = Promise.allSettled([
-            isPanelEnabled('congress') ? fetchCongressTrades() : Promise.resolve([]),
             isPanelEnabled('whales') ? fetchWhaleTransactions() : Promise.resolve([]),
             isPanelEnabled('contracts') ? fetchGovContracts() : Promise.resolve([]),
             isPanelEnabled('ai') ? fetchAINews() : Promise.resolve([]),
@@ -199,19 +197,17 @@ async function refreshAll() {
         ]);
 
         const results = await stage3Promise;
-        congressTrades = results[0].status === 'fulfilled' ? results[0].value : [];
-        whales = results[1].status === 'fulfilled' ? results[1].value : [];
-        contracts = results[2].status === 'fulfilled' ? results[2].value : [];
-        aiNews = results[3].status === 'fulfilled' ? results[3].value : [];
-        layoffs = results[4].status === 'fulfilled' ? results[4].value : [];
-        venezuelaNews = results[5].status === 'fulfilled' ? results[5].value : [];
-        greenlandNews = results[6].status === 'fulfilled' ? results[6].value : [];
-        intelFeed = results[7].status === 'fulfilled' ? results[7].value : [];
+        whales = results[0].status === 'fulfilled' ? results[0].value : [];
+        contracts = results[1].status === 'fulfilled' ? results[1].value : [];
+        aiNews = results[2].status === 'fulfilled' ? results[2].value : [];
+        layoffs = results[3].status === 'fulfilled' ? results[3].value : [];
+        venezuelaNews = results[4].status === 'fulfilled' ? results[4].value : [];
+        greenlandNews = results[5].status === 'fulfilled' ? results[5].value : [];
+        intelFeed = results[6].status === 'fulfilled' ? results[6].value : [];
     } catch (e) {
         console.error('Stage 3 error:', e);
     }
 
-    if (isPanelEnabled('congress')) renderCongressTrades(congressTrades);
     if (isPanelEnabled('whales')) renderWhaleWatch(whales);
     if (isPanelEnabled('contracts')) renderGovContracts(contracts);
     if (isPanelEnabled('ai')) renderAINews(aiNews);

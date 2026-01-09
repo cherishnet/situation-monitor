@@ -12,7 +12,6 @@ export const PANELS = {
     monitors: { name: 'My Monitors', priority: 1 },
     commodities: { name: 'Commodities / VIX', priority: 2 },
     polymarket: { name: 'Polymarket', priority: 2 },
-    congress: { name: 'Congress Trades', priority: 3 },
     whales: { name: 'Whale Watch', priority: 3 },
     mainchar: { name: 'Main Character', priority: 2 },
     printer: { name: 'Money Printer', priority: 2 },
@@ -21,13 +20,12 @@ export const PANELS = {
     layoffs: { name: 'Layoffs Tracker', priority: 3 },
     venezuela: { name: 'Venezuela Situation', priority: 2 },
     greenland: { name: 'Greenland Situation', priority: 2 },
-    tbpn: { name: 'TBPN Live', priority: 1 },
     intel: { name: 'Intel Feed', priority: 2 },
     correlation: { name: 'Correlation Engine', priority: 1 },
     narrative: { name: 'Narrative Tracker', priority: 1 }
 };
 
-export const NON_DRAGGABLE_PANELS = ['map', 'tbpn'];
+export const NON_DRAGGABLE_PANELS = ['map'];
 
 // Map zoom settings
 export const MAP_ZOOM_MIN = 1;
